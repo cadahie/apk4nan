@@ -1,0 +1,58 @@
+name: nan bị les
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Init Capacitor & add Android
+        run: |
+          set -e
+          cat << 'EOF' > package.json
+          {
+            "name": "appipatest",
+            "version": "1.0.0",
+            "private": true
+          }
+          EOF
+
+          cat << 'EOF' > capacitor.config.json
+          {
+            "appId": "com.example.appipatest",
+            "appName": "AppIpaTest",
+            "webDir": "www"
+          }
+          EOF
+
+          npm install --no-audit --no-fund @capacitor/core @capacitor/cli @capacitor/android @capacitor/assets
+          npx cap add android
+          npx cap sync android
+          npx capacitor-assets generate --android
+
+      - name: nan bị les
+        run: |
+          set -e
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AppIpaTest-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
